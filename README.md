@@ -1,1 +1,1 @@
-# Grafika---projekt
+# Grafika-projekt
