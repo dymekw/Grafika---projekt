@@ -60,6 +60,7 @@
 	<body>
 		<script src="three.js"></script>
 		<script src="Control.js"></script>
+        <script type="text/javascript" src="OBJLoader.js"></script>
         
         <div id="blocker">
 
@@ -231,11 +232,23 @@
 				scene.add( mesh );
                 
                 // box
-                geometry = new THREE.BoxGeometry(4, 4, 4);
-				mesh = createMesh(geometry, "grass B bump.jpg", 2);
-                mesh.position.y=10;
-                mesh.position.z=-40;
-				scene.add( mesh );
+                var loader = new THREE.OBJLoader();
+                loader.load('models/fireworks.obj', function(geometry) {
+                    var material = new THREE.MeshLambertMaterial({color: 0x5C3A21});
+
+                    geometry.children.forEach(function(child) {
+                        if (child.children.length == 1) {
+                            if (child.children[0] instanceof THREE.Mesh) {
+                                child.children[0].material = material;
+                            }
+                        }
+                    });
+                    geometry.scale.set(80, 80, 80);
+                    geometry.applyMatrix( new THREE.Matrix4().makeRotationY(Math.PI));
+                    geometry.position.y=10;
+                    geometry.side = THREE.DoubleSide;
+                    scene.add(geometry);
+                });
                 //
 
 				renderer = new THREE.WebGLRenderer();
