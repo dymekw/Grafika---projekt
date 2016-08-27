@@ -67,25 +67,14 @@ function init() {
     scene.add(mesh);
                 
     // box
-    var loader = new THREE.OBJLoader(); 
-    loader.load('models/fireworks.obj', function(geometry) {
-        var material = new THREE.MeshLambertMaterial({color: 0x5C3A21});
-
-        geometry.children.forEach(function(child) {
-            if (child.children.length == 1) {
-                if (child.children[0] instanceof THREE.Mesh) {
-                    child.children[0].material = material;
-                }
-            }
+    var loader = new THREE.OBJMTLLoader();
+    loader.addEventListener('load', function (event) {
+            mesh = event.content;
+            mesh.position.y=boxCoords.y;
+            mesh.position.z=boxCoords.z;
+            scene.add(mesh);
         });
-        geometry.scale.set(80, 80, 80);
-        geometry.applyMatrix( new THREE.Matrix4().makeRotationY(Math.PI));
-        geometry.position.y=boxCoords.y;
-        geometry.position.z=boxCoords.z;
-        geometry.side = THREE.DoubleSide;
-        scene.add(geometry);
-    });
-    //
+    loader.load('models/fireworks.obj', 'models/fireworks.mtl', {side: THREE.DoubleSide});
 
     renderer = new THREE.WebGLRenderer();
     renderer.setClearColor( 0xffffff );
