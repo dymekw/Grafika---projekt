@@ -5,6 +5,7 @@
 THREE.PointerLockControls = function (camera, floorSize) {
 
 	var scope = this;
+    var obstacles = new Array();
 
 	camera.rotation.set( 0, 0, 0 );
 
@@ -19,9 +20,6 @@ THREE.PointerLockControls = function (camera, floorSize) {
 	var moveBackward = false;
 	var moveLeft = false;
 	var moveRight = false;
-
-	var isOnObject = false;
-	var canJump = false;
 
 	var velocity = new THREE.Vector3();
 
@@ -74,7 +72,6 @@ THREE.PointerLockControls = function (camera, floorSize) {
 			case 87: // w
 				moveForward = false;
 				break;
-
 			case 37: // left
 			case 65: // a
 				moveLeft = false;
@@ -106,66 +103,50 @@ THREE.PointerLockControls = function (camera, floorSize) {
 
 	};
 
-	this.isOnObject = function ( boolean ) {
-
-		isOnObject = boolean;
-		canJump = boolean;
-
-	};
-
-	this.getDirection = function() {
-
-		// assumes the camera itself is not rotated
-
-		var direction = new THREE.Vector3( 0, 0, -1 );
-		var rotation = new THREE.Euler( 0, 0, 0, "YXZ" );
-
-		return function( v ) {
-
-			rotation.set( pitchObject.rotation.x, yawObject.rotation.y, 0 );
-
-			v.copy( direction ).applyEuler( rotation );
-
-			return v;
-
-		}
-
-	}();
 
 	this.update = function ( delta ) {
-
 		delta *= 0.1;
-
+        
+        //gently stop
 		velocity.x += ( - velocity.x ) * 0.08 * delta;
 		velocity.z += ( - velocity.z ) * 0.08 * delta;
 
-		if ( moveForward ) velocity.z -= 0.08 * delta;
-		if ( moveBackward ) velocity.z += 0.08 * delta;
+		if (moveForward)    velocity.z -= 0.08 * delta;
+		if (moveBackward)   velocity.z += 0.08 * delta;
+		if (moveLeft)       velocity.x -= 0.08 * delta;
+		if (moveRight)      velocity.x += 0.08 * delta;
 
-		if ( moveLeft ) velocity.x -= 0.08 * delta;
-		if ( moveRight ) velocity.x += 0.08 * delta;
-
-		yawObject.translateX( velocity.x );
-		yawObject.translateY( velocity.y ); 
-		yawObject.translateZ( velocity.z );
-
-		if ( yawObject.position.x < -floorSize/2 ) {
-			velocity.x = 0;
-			yawObject.position.x = -floorSize/2;
-		}
-        if ( yawObject.position.x > floorSize/2 ) {
-			velocity.x = 0;
-			yawObject.position.x = floorSize/2;
-		}
-
-        if ( yawObject.position.z < -floorSize/2 ) {
-			velocity.z = 0;
-			yawObject.position.z = -floorSize/2;
-		}
-        if ( yawObject.position.z > floorSize/2 ) {
-			velocity.z = 0;
-			yawObject.position.z = floorSize/2;
-		}
+		this.moveCamera();
 	};
+    
+    this.moveCamera = function() {
+        while (Math.abs(velocity.x) > 0.001 || Math.abs(velocity.z) > 0.001) {
+            yawObject.translateX(velocity.x);
+            yawObject.translateZ(velocity.z);
+            
+            if (!this.isInObstacle())   break;
+            
+            //camera in obstacle
+            yawObject.translateX(-velocity.x);
+            yawObject.translateZ(-velocity.z);
+            velocity.x*=0.999;
+            velocity.z*=0.999;
+        }
+    }
+    
+    this.isInObstacle = function() {
+        for (var i = 0; i < obstacles.length; i++) {
+            if (obstacles[i].minX <= yawObject.position.x && obstacles[i].maxX >= yawObject.position.x) {
+                if (obstacles[i].minZ <= yawObject.position.z && obstacles[i].maxZ >= yawObject.position.z) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    
+    this.addObstacle = function(x1, x2, z1, z2) {
+        obstacles.push({minX:x1, maxX:x2, minZ:z1, maxZ:z2});
+    }
 
 };

@@ -1,19 +1,26 @@
 var camera, scene, controls, renderer;
-var ambientLight, geometry;
+var ambientLight, boxLightR, boxLightG, boxLightB;
+var geometry;
 var floorSize = 100;
 var skyboxSize = floorSize*10;
 var boxCoords = {x:0, y:9, z:-30};
 var detonatorCoords = {x:0, y:9, z:30};
 var r=5;
+var angle=0;
 
 function init() {
-    camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 1000 );
+    camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
     scene = new THREE.Scene();
     //scene.fog = new THREE.FogExp2( 0xaaaaaa, 0.003);
     
     addLight();
 
     controls = new THREE.PointerLockControls(camera, floorSize);
+    controls.addObstacle(boxCoords.x-1.5, boxCoords.x+1.5, boxCoords.z-1.5, boxCoords.z+1.5);  //firewoks box
+    controls.addObstacle(-floorSize, -floorSize/2, -floorSize, floorSize);  //left edge of floor
+    controls.addObstacle(floorSize/2, floorSize, -floorSize, floorSize);  //right edge of floor
+    controls.addObstacle(-floorSize, floorSize, -floorSize, -floorSize/2);  //front edge of floor
+    controls.addObstacle(-floorSize, floorSize, floorSize/2, floorSize);  //rear edge of floor
     scene.add(controls.getObject());
 
     // floor
@@ -88,17 +95,17 @@ function addLight() {
     ambiLight = new THREE.AmbientLight(0x222222)
     scene.add(ambiLight);
     
-    var boxLight = new THREE.PointLight(0xff0000, 5, 20);
-    boxLight.position.set(boxCoords.x-r*Math.sqrt(3)/2, 20, boxCoords.z+r/2);
-    scene.add(boxLight);
+    boxLightR = new THREE.PointLight(0xff0000, 5, 20);
+    boxLightR.position.y = 20;
+    scene.add(boxLightR);
     
-    boxLight = new THREE.PointLight(0x00ff00, 5, 20);
-    boxLight.position.set(boxCoords.x+r*Math.sqrt(3)/2, 20, boxCoords.z+r/2);
-    scene.add(boxLight);
+    boxLightG = new THREE.PointLight(0x00ff00, 5, 20);
+    boxLightG.position.y = 20;
+    scene.add(boxLightG);
     
-    boxLight = new THREE.PointLight(0x0000ff, 5, 20);
-    boxLight.position.set(boxCoords.x, 20, boxCoords.z-r);
-    scene.add(boxLight);
+    boxLightB = new THREE.PointLight(0x0000ff, 5, 20);
+    boxLightB.position.y = 20;
+    scene.add(boxLightB);
     
     var detonatorLight = new THREE.PointLight(0x0000ff, 5, 20);
     detonatorLight.position.set(detonatorCoords.x, 20, detonatorCoords.z);
@@ -124,4 +131,18 @@ function createMesh(geom, imageFile, scaleFactor, bumpFile) {
     }
 
     return new THREE.Mesh(geom, mat);
+}
+
+function updateLights(delta) {
+    angle += delta/400;
+    if (angle >= 2*Math.PI)    angle -= 2*Math.PI;
+    
+    boxLightR.position.z = Math.cos(angle) * r + boxCoords.z;
+    boxLightR.position.x = Math.sin(angle) * r + boxCoords.x;
+    
+    boxLightG.position.z = Math.cos(angle + 2*Math.PI/3) * r + boxCoords.z;
+    boxLightG.position.x = Math.sin(angle + 2*Math.PI/3) * r + boxCoords.x;
+    
+    boxLightB.position.z = Math.cos(angle + 4*Math.PI/3) * r + boxCoords.z;
+    boxLightB.position.x = Math.sin(angle + 4*Math.PI/3) * r + boxCoords.y;
 }

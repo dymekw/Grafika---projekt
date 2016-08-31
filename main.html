@@ -183,8 +183,9 @@
 			function animate() {
 
 				requestAnimationFrame( animate );
-
-				controls.update( Date.now() - time );
+                var delta = Date.now()-time;
+                updateLights(delta)
+				controls.update(delta);
 
 				renderer.render( scene, camera );
 
