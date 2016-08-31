@@ -72,17 +72,56 @@ function init() {
     mesh = createMesh(geometry, "dawnmountain-yneg.png", 1);
     mesh.position.y=-(skyboxSize-1)/2;
     scene.add(mesh);
-                
-    // box
+       
     var loader = new THREE.OBJMTLLoader();
+    // box
     loader.addEventListener('load', function (event) {
-            mesh = event.content;
+            var mesh = event.content;
             mesh.position.y=boxCoords.y;
             mesh.position.z=boxCoords.z;
             scene.add(mesh);
         });
     loader.load('models/fireworks.obj', 'models/fireworks.mtl', {side: THREE.DoubleSide});
-
+    loader.removeEventListener('load');
+    
+    //fence
+    loader = new THREE.OBJMTLLoader();
+    loader.addEventListener('load', function (event) {
+        var mesh = event.content;
+            for(var i=0; i<floorSize/2; i++) {
+                var m = mesh.clone();
+                m.position.x=-floorSize/2-0.1;
+                m.position.y = 9;
+                m.position.z=-floorSize/2 + i*2 + 1;
+                scene.add(m);
+            }
+            for(var i=0; i<floorSize/2; i++) {
+                var m = mesh.clone();
+                m.position.x=floorSize/2+0.1;
+                m.position.y = 9;
+                m.position.z=-floorSize/2 + i*2 + 1;
+                scene.add(m);
+            }
+            for(var i=0; i<floorSize/2; i++) {
+                var m = mesh.clone();
+                m.rotation.y=Math.PI/2;
+                m.position.z=-floorSize/2-0.1;
+                m.position.y = 9;
+                m.position.x=-floorSize/2 + i*2 + 1;
+                scene.add(m);
+            }
+            for(var i=0; i<floorSize/2; i++) {
+                var m = mesh.clone();
+                m.rotation.y=Math.PI/2;
+                m.position.z=floorSize/2+0.1;
+                m.position.y = 9;
+                m.position.x=floorSize/2 - i*2 - 1;
+                scene.add(m);
+            }
+        });
+    loader.load('models/fence.obj', 'models/fence.mtl', {side: THREE.DoubleSide});
+    loader.removeEventListener('load');
+    
     renderer = new THREE.WebGLRenderer();
     renderer.setClearColor( 0xffffff );
     renderer.setSize( window.innerWidth, window.innerHeight );
