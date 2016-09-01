@@ -302,14 +302,19 @@ Examples =
 	firework :
 	{
 		positionStyle  : Type.SPHERE,
-		positionBase   : new THREE.Vector3( 0, 9, -30 ),
-		positionRadius : 0.5,
+		positionBase   : new THREE.Vector3( 0, 10, -30 ),
+		positionRadius : 0.2,
 		
 		velocityStyle  : Type.SPHERE,
-		speedBase      : 10,
+		speedBase      : -6,
 		speedSpread    : 1,
 		
-		accelerationBase : new THREE.Vector3( 0, -5, 0 ),
+		accelerationBase : new THREE.Vector3( 0, 15, 0 ),
+/*
+		angleBase               : 45,
+		angleSpread             : 90,
+		angleVelocityBase       : 0,
+		angleVelocitySpread     : 45,*/
 		
 		particleTexture : THREE.ImageUtils.loadTexture( 'images/spark.png' ),
 		

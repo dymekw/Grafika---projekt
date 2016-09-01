@@ -7,7 +7,7 @@ var boxCoords = {x:0, y:9, z:-30};
 var detonatorCoords = {x:0, y:9, z:30};
 var r=5;
 var angle=0;
-var bum = true;
+var boom = true;
 var counter = 0;
 var clock = new THREE.Clock();
 
@@ -242,21 +242,20 @@ function restartEngine(parameters) {
     engine2 = new ParticleEngine();
     engine2.setValues( parameters );
     engine2.initialize();
-    bum = true;
-
+    boom = true;
 }
 
 function updateFireworks() {
-    if(bum){
+    if(boom){
         var dt = clock.getDelta();
-        engine.update( dt * 0.3);
+        engine.update( dt * 0.4);
         engine2.update( dt * 0.5 ); 
         counter += 1;
     } 
 
-    if(counter == 200){
+    if(counter == 300){
         counter = 0;
-        bum = false;
+        boom = false;
         restartEngine(Examples.firework)
     }
 }
