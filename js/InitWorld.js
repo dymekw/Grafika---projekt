@@ -11,6 +11,8 @@ var boom = true;
 var counter = 0;
 var clock = new THREE.Clock();
 var loader;
+var sphere;
+var speed = new THREE.Vector3(10,0,0);
 
 function init() {
     Physijs.scripts.worker = 'js/physijs_worker.js';
@@ -33,7 +35,6 @@ function init() {
     createSkybox();
     createFireworksBox();
     createFence();
-    createSphere();
 
     //fireworks
     this.engine = new ParticleEngine();
@@ -80,17 +81,17 @@ function createFloor() {
 }
 
 function createSphere() {
-    var stoneGeom = new THREE.CubeGeometry(0.6, 6, 2);
+    var geometry = new THREE.SphereGeometry( .3, 32, 32 );
 
-    var stone = new Physijs.BoxMesh(stoneGeom, Physijs.createMaterial(new THREE.MeshPhongMaterial(
-    {
-                                    transparent: true, opacity: 0.8,
-//                            map: THREE.ImageUtils.loadTexture( 'textures/darker_wood.jpg' )
-        })));
-    stone.position = new THREE.Vector3(0,8,-10);
-    stone.lookAt(scene.position);
-    stone.__dirtyRotation = true;
-    scene.add(stone);
+    sphere = new Physijs.SphereMesh(geometry, Physijs.createMaterial(new THREE.MeshPhongMaterial()));
+    sphere.position = new THREE.Vector3(controls.getObject().position.x, controls.getObject().position.y, controls.getObject().position.z);
+    sphere.lookAt(scene.position);
+    sphere.__dirtyRotation = true;
+    scene.add(sphere);
+    
+    var ray = new THREE.Vector3(0,0,-10);
+    ray.applyAxisAngle(new THREE.Vector3(0,1,0), controls.getRotationY());;
+    sphere.setLinearVelocity({ x: ray.x, y: ray.y, z: ray.z});
 }
 
 function createFireworksBox() {
@@ -242,6 +243,15 @@ function restartEngine(parameters) {
     engine2.setValues( parameters );
     engine2.initialize();
     boom = true;
+}
+
+function updateSphereVelocity() {
+    if (sphere) {
+        if (sphere.position.y <= 8.3) {
+            speed.x *= 0.99;
+            sphere.setLinearVelocity({ x:speed.x, y: sphere.getLinearVelocity().y, z:sphere.getLinearVelocity().z});
+        }
+    }
 }
 
 function updateFireworks() {

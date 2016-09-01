@@ -34,7 +34,6 @@ THREE.PointerLockControls = function (camera, floorSize) {
 		pitchObject.rotation.x -= movementY * 0.002;
 
 		pitchObject.rotation.x = Math.max( - PI_2, Math.min( PI_2, pitchObject.rotation.x ) );
-
 	};
 
 	var onKeyDown = function ( event ) {
@@ -148,5 +147,12 @@ THREE.PointerLockControls = function (camera, floorSize) {
     this.addObstacle = function(x1, x2, z1, z2) {
         obstacles.push({minX:x1, maxX:x2, minZ:z1, maxZ:z2});
     }
-
+    
+    this.getRotationX = function() {
+        return pitchObject.rotation.x;
+    }
+    
+    this.getRotationY = function() {
+        return yawObject.rotation.y;
+    }
 };
