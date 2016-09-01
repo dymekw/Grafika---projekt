@@ -11,10 +11,11 @@ var boom = true;
 var counter = 0;
 var clock = new THREE.Clock();
 var loader;
-var random = Math.random();
 var fireworks = [];
 var condition = true;
 var stopPosition = randomVector3(-20,20, 50,100, -50,-10);
+var sphere;
+var speed = new THREE.Vector3(10,0,0);
 
 function init() {
     Physijs.scripts.worker = 'js/physijs_worker.js';
@@ -37,7 +38,6 @@ function init() {
     createSkybox();
     createFireworksBox();
     createFence();
-    createSphere();
 
     //explosion
     this.boom1 = new ParticleEngine();
@@ -146,17 +146,17 @@ function createFloor() {
 }
 
 function createSphere() {
-    var stoneGeom = new THREE.CubeGeometry(0.6, 6, 2);
+    var geometry = new THREE.SphereGeometry( .3, 32, 32 );
 
-    var stone = new Physijs.BoxMesh(stoneGeom, Physijs.createMaterial(new THREE.MeshPhongMaterial(
-    {
-                                    transparent: true, opacity: 0.8,
-//                            map: THREE.ImageUtils.loadTexture( 'textures/darker_wood.jpg' )
-        })));
-    stone.position = new THREE.Vector3(0,8,-10);
-    stone.lookAt(scene.position);
-    stone.__dirtyRotation = true;
-    scene.add(stone);
+    sphere = new Physijs.SphereMesh(geometry, Physijs.createMaterial(new THREE.MeshPhongMaterial()));
+    sphere.position = new THREE.Vector3(controls.getObject().position.x, controls.getObject().position.y, controls.getObject().position.z);
+    sphere.lookAt(scene.position);
+    sphere.__dirtyRotation = true;
+    scene.add(sphere);
+    
+    var ray = new THREE.Vector3(0,0,-10);
+    ray.applyAxisAngle(new THREE.Vector3(0,1,0), controls.getRotationY());;
+    sphere.setLinearVelocity({ x: ray.x, y: ray.y, z: ray.z});
 }
 
 function createFireworksBox() {
@@ -305,16 +305,19 @@ function randomVector3(xMin, xMax, yMin, yMax, zMin, zMax)
         yMin + (yMax - yMin) * Math.random(), zMin + (zMax - zMin) * Math.random() );
 }
 
+function updateSphereVelocity() {
+    if (sphere) {
+        if (sphere.position.y <= 8.3) {
+            speed.x *= 0.99;
+            sphere.setLinearVelocity({ x:speed.x, y: sphere.getLinearVelocity().y, z:sphere.getLinearVelocity().z});
+        }
+    }
+}
+
 function updateFireworks() {
     var dt = clock.getDelta();
     particleGroup.tick( dt );
-    //var direction = THREE.Vector3((stopPosition.x - boxCoords.x)/10, (stopPosition.y - boxCoords.y)/10, (stopPosition.z - boxCoords.z)/100)
 
-    // if ( random < dt ){
-    //     particleGroup.triggerPoolEmitter( 1, stopPosition );
-    // } else {
-    //     random = Math.random();
-    // }
     if(boom){
         boom1.update(dt * 0.2);
         boom2.update(dt * 0.3);
@@ -339,7 +342,6 @@ function updateFireworks() {
             if( counter === 10){
                 counter = 0;
             }
-           // random = Math.random();
             condition = false;
         }
     }

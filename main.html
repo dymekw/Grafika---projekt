@@ -96,6 +96,7 @@
 				document.addEventListener( 'webkitpointerlockerror', pointerlockerror, false );
 
 				instructions.addEventListener( 'click', function ( event ) {
+                    createSphere();
 					instructions.style.display = 'none';
 					// Ask the browser to lock the pointer
 					element.requestPointerLock = element.requestPointerLock || element.mozRequestPointerLock || element.webkitRequestPointerLock;
@@ -132,6 +133,7 @@
 				requestAnimationFrame( animate );
                 var delta = Date.now()-time;
                 updateFireworks();
+                updateSphereVelocity()
                 updateLights(delta);
 				controls.update(delta);
 				renderer.render( scene, camera );
