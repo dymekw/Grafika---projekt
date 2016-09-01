@@ -17,10 +17,10 @@ function init() {
 
     controls = new THREE.PointerLockControls(camera, floorSize);
     controls.addObstacle(boxCoords.x-1.5, boxCoords.x+1.5, boxCoords.z-1.5, boxCoords.z+1.5);  //firewoks box
-    controls.addObstacle(-floorSize, -floorSize/2, -floorSize, floorSize);  //left edge of floor
-    controls.addObstacle(floorSize/2, floorSize, -floorSize, floorSize);  //right edge of floor
-    controls.addObstacle(-floorSize, floorSize, -floorSize, -floorSize/2);  //front edge of floor
-    controls.addObstacle(-floorSize, floorSize, floorSize/2, floorSize);  //rear edge of floor
+    controls.addObstacle(-floorSize, -floorSize/2+0.5, -floorSize, floorSize);  //left edge of floor
+    controls.addObstacle(floorSize/2-0.5, floorSize, -floorSize, floorSize);  //right edge of floor
+    controls.addObstacle(-floorSize, floorSize, -floorSize, -floorSize/2+0.5);  //front edge of floor
+    controls.addObstacle(-floorSize, floorSize, floorSize/2-0.5, floorSize);  //rear edge of floor
     scene.add(controls.getObject());
 
     // floor
@@ -90,14 +90,14 @@ function init() {
         var mesh = event.content;
             for(var i=0; i<floorSize/2; i++) {
                 var m = mesh.clone();
-                m.position.x=-floorSize/2-0.1;
+                m.position.x=-floorSize/2;
                 m.position.y = 9;
                 m.position.z=-floorSize/2 + i*2 + 1;
                 scene.add(m);
             }
             for(var i=0; i<floorSize/2; i++) {
                 var m = mesh.clone();
-                m.position.x=floorSize/2+0.1;
+                m.position.x=floorSize/2;
                 m.position.y = 9;
                 m.position.z=-floorSize/2 + i*2 + 1;
                 scene.add(m);
@@ -105,7 +105,7 @@ function init() {
             for(var i=0; i<floorSize/2; i++) {
                 var m = mesh.clone();
                 m.rotation.y=Math.PI/2;
-                m.position.z=-floorSize/2-0.1;
+                m.position.z=-floorSize/2;
                 m.position.y = 9;
                 m.position.x=-floorSize/2 + i*2 + 1;
                 scene.add(m);
@@ -113,7 +113,7 @@ function init() {
             for(var i=0; i<floorSize/2; i++) {
                 var m = mesh.clone();
                 m.rotation.y=Math.PI/2;
-                m.position.z=floorSize/2+0.1;
+                m.position.z=floorSize/2;
                 m.position.y = 9;
                 m.position.x=floorSize/2 - i*2 - 1;
                 scene.add(m);
