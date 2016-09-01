@@ -31,47 +31,7 @@ function init() {
     mesh.position.y=8;
     scene.add( mesh );
                 
-    // skybox 
-    //behind
-    geometry = new THREE.PlaneGeometry(skyboxSize, skyboxSize, 10, 10);
-    geometry.applyMatrix(new THREE.Matrix4().makeRotationY(Math.PI));
-    mesh = createMesh(geometry, "dawnmountain-zneg.png", 1);
-    mesh.position.z=(skyboxSize-1)/2;
-    scene.add( mesh );
-    
-    //front
-    geometry = new THREE.PlaneGeometry(1000, 1000, 10, 10);
-    mesh = createMesh(geometry, "dawnmountain-zpos.png", 1);
-    mesh.position.z=-(skyboxSize-1)/2;
-    scene.add(mesh);
-    
-    //right
-    geometry = new THREE.PlaneGeometry(1000, 1000, 10, 10);
-    geometry.applyMatrix( new THREE.Matrix4().makeRotationY(-Math.PI/2));
-    mesh = createMesh(geometry, "dawnmountain-xpos.png", 1);
-    mesh.position.x=(skyboxSize-1)/2;
-    scene.add(mesh);
-    
-    //left
-    geometry = new THREE.PlaneGeometry(1000, 1000, 10, 10);
-    geometry.applyMatrix( new THREE.Matrix4().makeRotationY(Math.PI/2));
-    mesh = createMesh(geometry, "dawnmountain-xneg.png", 1);
-    mesh.position.x=-(skyboxSize-1)/2;
-    scene.add(mesh);
-       
-    //top
-    geometry = new THREE.PlaneGeometry(1000, 1000, 10, 10);
-    geometry.applyMatrix(new THREE.Matrix4().makeRotationX(Math.PI / 2 ));
-    mesh = createMesh(geometry, "dawnmountain-ypos.png", 1);
-    mesh.position.y=(skyboxSize-1)/2;
-    scene.add(mesh);
-       
-    //bottom
-    geometry = new THREE.PlaneGeometry(1000, 1000, 10, 10);
-    geometry.applyMatrix(new THREE.Matrix4().makeRotationX(-Math.PI/2));
-    mesh = createMesh(geometry, "dawnmountain-yneg.png", 1);
-    mesh.position.y=-(skyboxSize-1)/2;
-    scene.add(mesh);
+    createSkybox();
        
     var loader = new THREE.OBJMTLLoader();
     // box
@@ -122,12 +82,68 @@ function init() {
     loader.load('models/fence.obj', 'models/fence.mtl', {side: THREE.DoubleSide});
     loader.removeEventListener('load');
     
+    //firework
+    loader = new THREE.OBJMTLLoader();
+    loader.addEventListener('load', function (event) {
+        var mesh = event.content;
+        mesh.position = {x:0, y:8.2, z:30};
+        mesh.scale = {x:.2, y:.2, z:.2};
+        mesh.rotation.x=Math.PI/2;
+        mesh.rotation.z=Math.PI;
+        scene.add(mesh);
+        });
+    loader.load('models/firework.obj', 'models/firework.mtl', {side: THREE.DoubleSide});
+    loader.removeEventListener('load');
+    
     renderer = new THREE.WebGLRenderer();
     renderer.setClearColor( 0xffffff );
     renderer.setSize( window.innerWidth, window.innerHeight );
     document.body.appendChild( renderer.domElement );
 
     window.addEventListener( 'resize', onWindowResize, false );
+}
+
+function createSkybox() {
+    //behind
+    geometry = new THREE.PlaneGeometry(skyboxSize, skyboxSize, 10, 10);
+    geometry.applyMatrix(new THREE.Matrix4().makeRotationY(Math.PI));
+    mesh = createMesh(geometry, "dawnmountain-zneg.png", 1);
+    mesh.position.z=(skyboxSize-1)/2;
+    scene.add( mesh );
+    
+    //front
+    geometry = new THREE.PlaneGeometry(1000, 1000, 10, 10);
+    mesh = createMesh(geometry, "dawnmountain-zpos.png", 1);
+    mesh.position.z=-(skyboxSize-1)/2;
+    scene.add(mesh);
+    
+    //right
+    geometry = new THREE.PlaneGeometry(1000, 1000, 10, 10);
+    geometry.applyMatrix( new THREE.Matrix4().makeRotationY(-Math.PI/2));
+    mesh = createMesh(geometry, "dawnmountain-xpos.png", 1);
+    mesh.position.x=(skyboxSize-1)/2;
+    scene.add(mesh);
+    
+    //left
+    geometry = new THREE.PlaneGeometry(1000, 1000, 10, 10);
+    geometry.applyMatrix( new THREE.Matrix4().makeRotationY(Math.PI/2));
+    mesh = createMesh(geometry, "dawnmountain-xneg.png", 1);
+    mesh.position.x=-(skyboxSize-1)/2;
+    scene.add(mesh);
+       
+    //top
+    geometry = new THREE.PlaneGeometry(1000, 1000, 10, 10);
+    geometry.applyMatrix(new THREE.Matrix4().makeRotationX(Math.PI / 2 ));
+    mesh = createMesh(geometry, "dawnmountain-ypos.png", 1);
+    mesh.position.y=(skyboxSize-1)/2;
+    scene.add(mesh);
+       
+    //bottom
+    geometry = new THREE.PlaneGeometry(1000, 1000, 10, 10);
+    geometry.applyMatrix(new THREE.Matrix4().makeRotationX(-Math.PI/2));
+    mesh = createMesh(geometry, "dawnmountain-yneg.png", 1);
+    mesh.position.y=-(skyboxSize-1)/2;
+    scene.add(mesh);
 }
 
 function addLight() {
@@ -146,7 +162,7 @@ function addLight() {
     boxLightB.position.y = 20;
     scene.add(boxLightB);
     
-    var detonatorLight = new THREE.PointLight(0x0000ff, 5, 20);
+    var detonatorLight = new THREE.PointLight(0xffffff, 5, 20);
     detonatorLight.position.set(detonatorCoords.x, 20, detonatorCoords.z);
     scene.add(detonatorLight);
 }
