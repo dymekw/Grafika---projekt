@@ -117,12 +117,15 @@ function init() {
     loader.removeEventListener('load');
 
     //fireworks
-    this.engine = new ParticleEngine();
-    engine.setValues( Examples.firework );
-    engine.initialize();
-    this.engine2 = new ParticleEngine();
-    engine2.setValues( Examples.firework );
-    engine2.initialize();
+    this.boom1 = new ParticleEngine();
+    boom1.setValues( Examples.firework );
+    boom1.initialize();
+    this.boom2 = new ParticleEngine();
+    boom2.setValues( Examples.firework );
+    boom2.initialize();
+    this.boom3 = new ParticleEngine();
+    boom3.setValues( Examples.firework );
+    boom3.initialize();
 
     //firework
     loader = new THREE.OBJMTLLoader();
@@ -234,26 +237,30 @@ function updateLights(delta) {
 }
 
 function restartEngine(parameters) {
-    engine.destroy();
-    engine = new ParticleEngine();
-    engine.setValues( parameters );
-    engine.initialize();
-    engine2.destroy();
-    engine2 = new ParticleEngine();
-    engine2.setValues( parameters );
-    engine2.initialize();
+    boom1.destroy();
+    boom1 = new ParticleEngine();
+    boom1.setValues( parameters );
+    boom1.initialize();
+    boom2.destroy();
+    boom2 = new ParticleEngine();
+    boom2.setValues( parameters );
+    boom2.initialize();
+    boom3 = new ParticleEngine();
+    boom3.setValues( parameters );
+    boom3.initialize();
     boom = true;
 }
 
 function updateFireworks() {
     if(boom){
         var dt = clock.getDelta();
-        engine.update( dt * 0.4);
-        engine2.update( dt * 0.5 ); 
+        boom1.update(dt * 0.2);
+        boom2.update(dt * 0.3);
+        boom3.update(dt * 0.4);
         counter += 1;
     } 
 
-    if(counter == 300){
+    if(counter == 400){
         counter = 0;
         boom = false;
         restartEngine(Examples.firework)
