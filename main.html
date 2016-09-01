@@ -47,6 +47,7 @@
         <script src="js/InitWorld.js"></script>
         <script src="js/ParticleEngine.js"></script>
 		<script src="js/ParticleEngineExamples.js"></script>
+        <script src="js/physi.js"></script>
         <script type="text/javascript" src="js/OBJMTLLoader.js"></script>
         <script type="text/javascript" src="js/OBJLoader.js"></script>
         <script type="text/javascript" src="js/MTLLoader.js"></script>
@@ -132,6 +133,7 @@
                 updateLights(delta);
 				controls.update(delta);
 				renderer.render( scene, camera );
+                scene.simulate(undefined, 1);
 				time = Date.now();
 			}            
    		</script>

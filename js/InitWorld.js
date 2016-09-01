@@ -10,10 +10,15 @@ var angle=0;
 var bum = true;
 var counter = 0;
 var clock = new THREE.Clock();
+var loader;
 
 function init() {
+    Physijs.scripts.worker = 'js/physijs_worker.js';
+    Physijs.scripts.ammo = 'ammo.js';
+    
     camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
-    scene = new THREE.Scene();
+    scene = new Physijs.Scene;
+    scene.setGravity(new THREE.Vector3(0, -50, 0));
     //scene.fog = new THREE.FogExp2( 0xaaaaaa, 0.003);    
     addLight();
     controls = new THREE.PointerLockControls(camera, floorSize);
@@ -23,53 +28,73 @@ function init() {
     controls.addObstacle(-floorSize, floorSize, -floorSize, -floorSize/2+0.5);  //front edge of floor
     controls.addObstacle(-floorSize, floorSize, floorSize/2-0.5, floorSize);  //rear edge of floor
     scene.add(controls.getObject());
-    // floor
+                
+    createFloor();
+    createSkybox();
+    createFireworksBox();
+    createFence();
+    createSphere();
+
+    //fireworks
+    this.engine = new ParticleEngine();
+    engine.setValues( Examples.firework );
+    engine.initialize();
+    this.engine2 = new ParticleEngine();
+    engine2.setValues( Examples.firework );
+    engine2.initialize();
+
+    //firework
+    loader = new THREE.OBJMTLLoader();
+    loader.addEventListener('load', function (event) {
+        var mesh = event.content;
+        mesh.position = {x:0, y:8.2, z:30};
+        mesh.scale = {x:.2, y:.2, z:.2};
+        mesh.rotation.x=Math.PI/2;
+        mesh.rotation.z=Math.PI;
+        scene.add(mesh);
+        });
+    loader.load('models/firework.obj', 'models/firework.mtl', {side: THREE.DoubleSide});
+    loader.removeEventListener('load');
+    
+    //renderer
+    renderer = new THREE.WebGLRenderer();
+    renderer.setClearColor( 0xffffff );
+    renderer.setSize( window.innerWidth, window.innerHeight );
+    document.body.appendChild( renderer.domElement );
+    window.addEventListener( 'resize', onWindowResize, false );
+}
+
+function createFloor() {
     geometry = new THREE.PlaneGeometry(floorSize, floorSize, 10, 10);
     geometry.applyMatrix( new THREE.Matrix4().makeRotationX(-Math.PI/2));
     mesh = createMesh(geometry, "grass B.jpg", 12, "grass B bump.jpg");
-    mesh.position.y=8;
-    scene.add( mesh );                
-    //skybox 
-    //behind
-    geometry = new THREE.PlaneGeometry(skyboxSize, skyboxSize, 10, 10);
-    geometry.applyMatrix(new THREE.Matrix4().makeRotationY(Math.PI));
-    mesh = createMesh(geometry, "dawnmountain-zneg.png", 1);
-    mesh.position.z=(skyboxSize-1)/2;
-    scene.add( mesh );    
-    //front
-    geometry = new THREE.PlaneGeometry(1000, 1000, 10, 10);
-    mesh = createMesh(geometry, "dawnmountain-zpos.png", 1);
-    mesh.position.z=-(skyboxSize-1)/2;
-    scene.add(mesh);    
-    //right
-    geometry = new THREE.PlaneGeometry(1000, 1000, 10, 10);
-    geometry.applyMatrix( new THREE.Matrix4().makeRotationY(-Math.PI/2));
-    mesh = createMesh(geometry, "dawnmountain-xpos.png", 1);
-    mesh.position.x=(skyboxSize-1)/2;
-    scene.add(mesh);   
-    //left
-    geometry = new THREE.PlaneGeometry(1000, 1000, 10, 10);
-    geometry.applyMatrix( new THREE.Matrix4().makeRotationY(Math.PI/2));
-    mesh = createMesh(geometry, "dawnmountain-xneg.png", 1);
-    mesh.position.x=-(skyboxSize-1)/2;
-    scene.add(mesh);      
-    //top
-    geometry = new THREE.PlaneGeometry(1000, 1000, 10, 10);
-    geometry.applyMatrix(new THREE.Matrix4().makeRotationX(Math.PI / 2 ));
-    mesh = createMesh(geometry, "dawnmountain-ypos.png", 1);
-    mesh.position.y=(skyboxSize-1)/2;
-    scene.add(mesh);       
-    //bottom
-    geometry = new THREE.PlaneGeometry(1000, 1000, 10, 10);
-    geometry.applyMatrix(new THREE.Matrix4().makeRotationX(-Math.PI/2));
-    mesh = createMesh(geometry, "dawnmountain-yneg.png", 1);
-    mesh.position.y=-(skyboxSize-1)/2;
-    scene.add(mesh);       
-                
-    createSkybox();
-       
-    var loader = new THREE.OBJMTLLoader();
-    // box
+
+    var ground_material = Physijs.createMaterial(
+                    mesh.material,
+                    .9, .3);
+
+    var ground = new Physijs.BoxMesh(new THREE.CubeGeometry(floorSize, 1, floorSize), ground_material, 0);
+    ground.position.y=7.5;
+    
+    scene.add( ground );  
+}
+
+function createSphere() {
+    var stoneGeom = new THREE.CubeGeometry(0.6, 6, 2);
+
+    var stone = new Physijs.BoxMesh(stoneGeom, Physijs.createMaterial(new THREE.MeshPhongMaterial(
+    {
+                                    transparent: true, opacity: 0.8,
+//                            map: THREE.ImageUtils.loadTexture( 'textures/darker_wood.jpg' )
+        })));
+    stone.position = new THREE.Vector3(0,8,-10);
+    stone.lookAt(scene.position);
+    stone.__dirtyRotation = true;
+    scene.add(stone);
+}
+
+function createFireworksBox() {
+    loader = new THREE.OBJMTLLoader();
     loader.addEventListener('load', function (event) {
             var mesh = event.content;
             mesh.position.y=boxCoords.y;
@@ -77,8 +102,10 @@ function init() {
             scene.add(mesh);
         });
     loader.load('models/fireworks.obj', 'models/fireworks.mtl', {side: THREE.DoubleSide});
-    loader.removeEventListener('load');    
-    //fence
+    loader.removeEventListener('load'); 
+}
+
+function createFence() {
     loader = new THREE.OBJMTLLoader();
     loader.addEventListener('load', function (event) {
         var mesh = event.content;
@@ -115,34 +142,6 @@ function init() {
         });
     loader.load('models/fence.obj', 'models/fence.mtl', {side: THREE.DoubleSide});
     loader.removeEventListener('load');
-
-    //fireworks
-    this.engine = new ParticleEngine();
-    engine.setValues( Examples.firework );
-    engine.initialize();
-    this.engine2 = new ParticleEngine();
-    engine2.setValues( Examples.firework );
-    engine2.initialize();
-
-    //firework
-    loader = new THREE.OBJMTLLoader();
-    loader.addEventListener('load', function (event) {
-        var mesh = event.content;
-        mesh.position = {x:0, y:8.2, z:30};
-        mesh.scale = {x:.2, y:.2, z:.2};
-        mesh.rotation.x=Math.PI/2;
-        mesh.rotation.z=Math.PI;
-        scene.add(mesh);
-        });
-    loader.load('models/firework.obj', 'models/firework.mtl', {side: THREE.DoubleSide});
-    loader.removeEventListener('load');
-    
-    //renderer
-    renderer = new THREE.WebGLRenderer();
-    renderer.setClearColor( 0xffffff );
-    renderer.setSize( window.innerWidth, window.innerHeight );
-    document.body.appendChild( renderer.domElement );
-    window.addEventListener( 'resize', onWindowResize, false );
 }
 
 function createSkybox() {
