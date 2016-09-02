@@ -15,8 +15,10 @@ var fireworks = [];
 var condition = true;
 var stopPosition = randomVector3(-20,20, 50,100, -50,-10);
 var sphere;
-var speed = new THREE.Vector3(0,0,-10);
+var speed = new THREE.Vector3(0,0,-1);
 var clicked = false;
+var gravity = 50;
+var h = 1.667;
 
 function init() {
     Physijs.scripts.worker = 'js/physijs_worker.js';
@@ -24,8 +26,8 @@ function init() {
     
     camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
     scene = new Physijs.Scene;
-    scene.setGravity(new THREE.Vector3(0, -50, 0));
-    //scene.fog = new THREE.FogExp2( 0xaaaaaa, 0.003);    
+    scene.setGravity(new THREE.Vector3(0, -gravity, 0));
+    
     addLight();
     controls = new THREE.PointerLockControls(camera, floorSize);
     controls.addObstacle(boxCoords.x-1.5, boxCoords.x+1.5, boxCoords.z-1.5, boxCoords.z+1.5);  //firewoks box
@@ -149,6 +151,11 @@ function createFloor() {
 function createSphere() {
     if (sphere) return;
     if (clicked) {
+        var currentPos = controls.getObject().position;
+        //vector from current position to detonator
+        var ray = new THREE.Vector3(detonatorCoords.x - currentPos.x, 0, detonatorCoords.z - currentPos.z);
+        var velocity = ray.length() * Math.sqrt(gravity / (2*h));
+        
         var geometry = new THREE.SphereGeometry( .3, 32, 32 );
 
         sphere = new Physijs.SphereMesh(geometry, Physijs.createMaterial(new THREE.MeshPhongMaterial()));
@@ -157,7 +164,8 @@ function createSphere() {
         sphere.__dirtyRotation = true;
         scene.add(sphere);
 
-        speed.applyAxisAngle(new THREE.Vector3(0,1,0), controls.getRotationY());;
+        speed.applyAxisAngle(new THREE.Vector3(0,1,0), controls.getRotationY());
+        speed.multiplyScalar(velocity);
         sphere.setLinearVelocity({ x: speed.x, y: speed.y, z: speed.z});
     } else {
         clicked = true;
@@ -270,7 +278,7 @@ function addLight() {
     boxLightB = new THREE.PointLight(0x0000ff, 5, 20);
     boxLightB.position.y = 20;
     scene.add(boxLightB);    
-    var detonatorLight = new THREE.PointLight(0x0000ff, 5, 20);
+    var detonatorLight = new THREE.PointLight(0xffffff, 5, 20);
     detonatorLight.position.set(detonatorCoords.x, 20, detonatorCoords.z);
     scene.add(detonatorLight);
 }
