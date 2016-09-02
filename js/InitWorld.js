@@ -15,7 +15,8 @@ var fireworks = [];
 var condition = true;
 var stopPosition = randomVector3(-20,20, 50,100, -50,-10);
 var sphere;
-var speed = new THREE.Vector3(10,0,0);
+var speed = new THREE.Vector3(0,0,-10);
+var clicked = false;
 
 function init() {
     Physijs.scripts.worker = 'js/physijs_worker.js';
@@ -146,17 +147,21 @@ function createFloor() {
 }
 
 function createSphere() {
-    var geometry = new THREE.SphereGeometry( .3, 32, 32 );
+    if (sphere) return;
+    if (clicked) {
+        var geometry = new THREE.SphereGeometry( .3, 32, 32 );
 
-    sphere = new Physijs.SphereMesh(geometry, Physijs.createMaterial(new THREE.MeshPhongMaterial()));
-    sphere.position = new THREE.Vector3(controls.getObject().position.x, controls.getObject().position.y, controls.getObject().position.z);
-    sphere.lookAt(scene.position);
-    sphere.__dirtyRotation = true;
-    scene.add(sphere);
-    
-    var ray = new THREE.Vector3(0,0,-10);
-    ray.applyAxisAngle(new THREE.Vector3(0,1,0), controls.getRotationY());;
-    sphere.setLinearVelocity({ x: ray.x, y: ray.y, z: ray.z});
+        sphere = new Physijs.SphereMesh(geometry, Physijs.createMaterial(new THREE.MeshPhongMaterial()));
+        sphere.position = new THREE.Vector3(controls.getObject().position.x, controls.getObject().position.y, controls.getObject().position.z);
+        sphere.lookAt(scene.position);
+        sphere.__dirtyRotation = true;
+        scene.add(sphere);
+
+        speed.applyAxisAngle(new THREE.Vector3(0,1,0), controls.getRotationY());;
+        sphere.setLinearVelocity({ x: speed.x, y: speed.y, z: speed.z});
+    } else {
+        clicked = true;
+    }
 }
 
 function createFireworksBox() {
@@ -307,9 +312,9 @@ function randomVector3(xMin, xMax, yMin, yMax, zMin, zMax)
 
 function updateSphereVelocity() {
     if (sphere) {
-        if (sphere.position.y <= 8.3) {
-            speed.x *= 0.99;
-            sphere.setLinearVelocity({ x:speed.x, y: sphere.getLinearVelocity().y, z:sphere.getLinearVelocity().z});
+        if (sphere.position.y <= 8.4) {
+            speed.multiplyScalar(0.99);
+            sphere.setLinearVelocity({ x:speed.x, y: sphere.getLinearVelocity().y, z:speed.z});
         }
     }
 }
