@@ -95,7 +95,6 @@
 				document.addEventListener( 'webkitpointerlockerror', pointerlockerror, false );
 
 				instructions.addEventListener( 'click', function ( event ) {
-                    createSphere();
 					instructions.style.display = 'none';
 					// Ask the browser to lock the pointer
 					element.requestPointerLock = element.requestPointerLock || element.mozRequestPointerLock || element.webkitRequestPointerLock;
@@ -109,6 +108,7 @@
 						}
 						document.addEventListener( 'fullscreenchange', fullscreenchange, false );
 						document.addEventListener( 'mozfullscreenchange', fullscreenchange, false );
+                        document.addEventListener( 'click', createSphere, false );
 						element.requestFullscreen = element.requestFullscreen || element.mozRequestFullscreen || element.mozRequestFullScreen || element.webkitRequestFullscreen;
 						element.requestFullscreen();
 					} else {

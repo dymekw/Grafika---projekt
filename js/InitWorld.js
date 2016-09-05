@@ -8,18 +8,20 @@ var detonatorCoords = {x:0, y:9, z:30};
 var r=5;
 var angle=0;
 var loader;
-var stopPosition = randomVector3(-20,20, 50,100, -50,-10);
 var sphere;
-var speed = new THREE.Vector3(10,0,0);
+var speed = new THREE.Vector3(0,0,-1);
+var clicked = false;
+var gravity = 50;
+var h = 1.667;
 //explosions
-var boom = true; //starting explosion and fireworks
-var condition = true; //starting one firework
 var clock = new THREE.Clock();
 var firework;
-var xStop = false; //stop updating firework position
+var boom = false; //starting explosion and fireworks
+var condition = true; //starting one firework
+var stopPosition = randomVector3(-20,20, 50,100, -50,-10);  //place of firework rocket explosion
+var xStop = false; //stop updating firework rocket position
 var yStop = false;
 var zStop = false;
-
 
 function init() {
     Physijs.scripts.worker = 'js/physijs_worker.js';
@@ -27,8 +29,8 @@ function init() {
     
     camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
     scene = new Physijs.Scene;
-    scene.setGravity(new THREE.Vector3(0, -50, 0));
-    //scene.fog = new THREE.FogExp2( 0xaaaaaa, 0.003);    
+    scene.setGravity(new THREE.Vector3(0, -gravity, 0));
+    
     addLight();
     controls = new THREE.PointerLockControls(camera, floorSize);
     controls.addObstacle(boxCoords.x-1.5, boxCoords.x+1.5, boxCoords.z-1.5, boxCoords.z+1.5);  //firewoks box
@@ -51,14 +53,10 @@ function init() {
         var mesh = event.content;
         mesh.position = {x:0, y:8.2, z:30};
         mesh.scale = {x:.2, y:.2, z:.2};
-        // iks = 0.0;
-        // igrek = 60.0;
-        // zet = 5.0;
-        // calculateInclination(mesh, iks, igrek, zet);
         mesh.rotation.x=Math.PI/2;
         mesh.rotation.z=Math.PI;
         scene.add(mesh);
-        });
+    });
     loader.load('models/firework.obj', 'models/firework.mtl', {side: THREE.DoubleSide});
     loader.removeEventListener('load');
 
@@ -97,17 +95,27 @@ function createFloor() {
 }
 
 function createSphere() {
-    var geometry = new THREE.SphereGeometry( .3, 32, 32 );
+    if (sphere) return;
+    if (clicked) {
+        var currentPos = controls.getObject().position;
+        //vector from current position to detonator
+        var ray = new THREE.Vector3(detonatorCoords.x - currentPos.x, 0, detonatorCoords.z - currentPos.z);
+        var velocity = ray.length() * Math.sqrt(gravity / (2*h));
+        
+        var geometry = new THREE.SphereGeometry( .3, 32, 32 );
 
-    sphere = new Physijs.SphereMesh(geometry, Physijs.createMaterial(new THREE.MeshPhongMaterial()));
-    sphere.position = new THREE.Vector3(controls.getObject().position.x, controls.getObject().position.y, controls.getObject().position.z);
-    sphere.lookAt(scene.position);
-    sphere.__dirtyRotation = true;
-    scene.add(sphere);
-    
-    var ray = new THREE.Vector3(0,0,-10);
-    ray.applyAxisAngle(new THREE.Vector3(0,1,0), controls.getRotationY());;
-    sphere.setLinearVelocity({ x: ray.x, y: ray.y, z: ray.z});
+        sphere = new Physijs.SphereMesh(geometry, Physijs.createMaterial(new THREE.MeshPhongMaterial()));
+        sphere.position = new THREE.Vector3(controls.getObject().position.x, controls.getObject().position.y, controls.getObject().position.z);
+        sphere.lookAt(scene.position);
+        sphere.__dirtyRotation = true;
+        scene.add(sphere);
+
+        speed.applyAxisAngle(new THREE.Vector3(0,1,0), controls.getRotationY());
+        speed.multiplyScalar(velocity);
+        sphere.setLinearVelocity({ x: speed.x, y: speed.y, z: speed.z});
+    } else {
+        clicked = true;
+    }
 }
 
 function createFireworksBox() {
@@ -160,7 +168,6 @@ function createFence() {
     loader.load('models/fence.obj', 'models/fence.mtl', {side: THREE.DoubleSide});
     loader.removeEventListener('load');
 }
-
 
 function createSkybox() {
     //behind
@@ -223,7 +230,6 @@ function initializeExplosion() {
         particleDeathAge   : 2.5,       
         emitterDeathAge    : 0.2
     };
-
     this.boom1 = new ParticleEngine();
     boom1.setValues(explosion);
     boom1.initialize();
@@ -286,7 +292,7 @@ function addLight() {
     boxLightB = new THREE.PointLight(0x0000ff, 5, 20);
     boxLightB.position.y = 20;
     scene.add(boxLightB);    
-    var detonatorLight = new THREE.PointLight(0x0000ff, 5, 20);
+    var detonatorLight = new THREE.PointLight(0xffffff, 5, 20);
     detonatorLight.position.set(detonatorCoords.x, 20, detonatorCoords.z);
     scene.add(detonatorLight);
 }
@@ -326,9 +332,9 @@ function randomVector3(xMin, xMax, yMin, yMax, zMin, zMax) {
 
 function updateSphereVelocity() {
     if (sphere) {
-        if (sphere.position.y <= 8.3) {
-            speed.x *= 0.99;
-            sphere.setLinearVelocity({ x:speed.x, y: sphere.getLinearVelocity().y, z:sphere.getLinearVelocity().z});
+        if (sphere.position.y <= 8.4) {
+            speed.multiplyScalar(0.99);
+            sphere.setLinearVelocity({ x:speed.x, y: sphere.getLinearVelocity().y, z:speed.z});
         }
     }
 }
