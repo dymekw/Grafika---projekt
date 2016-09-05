@@ -22,6 +22,14 @@ var stopPosition = randomVector3(-20,20, 50,100, -50,-10);  //place of firework 
 var xStop = false; //stop updating firework rocket position
 var yStop = false;
 var zStop = false;
+//firework rocket
+var rocket;
+var fly = false; 
+//sparkles
+var sparklesNumber = 40;
+var sparklesLights = [];
+var sparklesSpheres = [];
+var counter = 0;
 
 function init() {
     Physijs.scripts.worker = 'js/physijs_worker.js';
@@ -46,8 +54,9 @@ function init() {
     createFence();
     initializeExplosion();
     initializeFireworks();
+    initializeSparkles();
    
-    //firework
+    //firework rocket
     loader = new THREE.OBJMTLLoader();
     loader.addEventListener('load', function (event) {
         var mesh = event.content;
@@ -55,6 +64,7 @@ function init() {
         mesh.scale = {x:.2, y:.2, z:.2};
         mesh.rotation.x=Math.PI/2;
         mesh.rotation.z=Math.PI;
+        rocket = mesh;
         scene.add(mesh);
     });
     loader.load('models/firework.obj', 'models/firework.mtl', {side: THREE.DoubleSide});
@@ -113,6 +123,8 @@ function createSphere() {
         speed.applyAxisAngle(new THREE.Vector3(0,1,0), controls.getRotationY());
         speed.multiplyScalar(velocity);
         sphere.setLinearVelocity({ x: speed.x, y: speed.y, z: speed.z});
+
+        fly = true;
     } else {
         clicked = true;
     }
@@ -280,6 +292,23 @@ function initializeFireworks() {
     scene.add( particleGroup.mesh );
 }
 
+function initializeSparkles() {
+    var sphereLight = new THREE.SphereGeometry(0.03);
+    var sphereLightMaterial = new THREE.MeshBasicMaterial({color: 0xffffff});
+    for(var i = 0; i < sparklesNumber; i++){
+        var light = new THREE.PointLight( 0x000000, 1, 0.5);
+        var sphereLightMesh = new THREE.Mesh(sphereLight, sphereLightMaterial);
+        var lightPosition = randomVector3(-0.15, 0.15, 8.10, 8.40, 30.4, 31.4);
+        light.position = lightPosition;
+        sphereLightMesh.position = lightPosition;
+        sphereLightMesh.visible = false;
+        sparklesLights.push(light);
+        sparklesSpheres.push(sphereLightMesh);
+        scene.add(sparklesLights[i]);
+        scene.add(sparklesSpheres[i]);
+    }
+}
+
 function addLight() {
     ambiLight = new THREE.AmbientLight(0x222222)
     scene.add(ambiLight);    
@@ -437,4 +466,38 @@ function updateFireworks() {
             condition = false;
         }
     }  
+}
+
+function updateRocket() {
+    if(fly){
+        rocket.position.z -= 0.8;
+        for(var i = 0; i < sparklesNumber - 1; i +=2 ){
+            sparklesLights[i].position.z -= 0.4;
+            sparklesSpheres[i].position.z -= 0.4;
+            if((i + counter) % 2 === 0){
+                if(sparklesSpheres[i].visible === true){
+                    sparklesSpheres[i].visible = false;
+                    sparklesSpheres[i+1].visible = true;
+                }
+                else{
+                    sparklesSpheres[i].visible = true;
+                    sparklesSpheres[i+1].visible = false;
+                } 
+            }
+        }
+        sparklesLights[sparklesNumber - 1].position.z -= 0.4;
+        sparklesSpheres[sparklesNumber - 1].position.z -= 0.4;
+        counter++;
+        if(rocket.position.z <= -25){
+            boom = true;
+        }
+        if(rocket.position.z <= -28.5){
+            scene.remove(rocket);
+            for(var i = 0; i < sparklesNumber; i++){
+                scene.remove(sparklesLights[i]);
+                scene.remove(sparklesSpheres[i]);
+            }
+            fly = false;
+        }
+    }
 }
