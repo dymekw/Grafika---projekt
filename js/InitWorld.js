@@ -4,7 +4,7 @@ var geometry;
 var floorSize = 100;
 var skyboxSize = floorSize*10;
 var boxCoords = {x:0, y:9, z:-30};
-var detonatorCoords = {x:0, y:9, z:30};
+var detonatorCoords = {x:0, y:8.2, z:30};
 var r=5;
 var angle=0;
 var boom = true;
@@ -19,6 +19,8 @@ var speed = new THREE.Vector3(0,0,-1);
 var clicked = false;
 var gravity = 50;
 var h = 1.667;
+var boundingBox, ground;
+var floorHit = false;
 
 function init() {
     Physijs.scripts.worker = 'js/physijs_worker.js';
@@ -100,7 +102,7 @@ function init() {
     loader = new THREE.OBJMTLLoader();
     loader.addEventListener('load', function (event) {
         var mesh = event.content;
-        mesh.position = {x:0, y:8.2, z:30};
+        mesh.position = {x:0, y:8.2, z:28.5};
         mesh.scale = {x:.2, y:.2, z:.2};
         mesh.rotation.x=Math.PI/2;
         mesh.rotation.z=Math.PI;
@@ -123,6 +125,19 @@ function init() {
         loader.load('models/firework.obj', 'models/firework.mtl', {side: THREE.DoubleSide});
         loader.removeEventListener('load'); 
     }
+    
+    //detonator
+    loader = new THREE.OBJMTLLoader();
+    loader.addEventListener('load', function (event) {
+        var mesh = event.content;
+        mesh.position = detonatorCoords;
+	scene.add(mesh);
+	boundingBox = new Physijs.BoxMesh(new THREE.CubeGeometry(2,0.3,2), Physijs.createMaterial(new THREE.MeshNormalMaterial( { transparent: true, opacity: 0.0 } )), 0);
+	boundingBox.position = new THREE.Vector3(detonatorCoords.x, detonatorCoords.y, detonatorCoords.z);
+        scene.add(boundingBox);
+        });
+    loader.load('models/detonator.obj', 'models/detonator.mtl', {side: THREE.DoubleSide});
+    loader.removeEventListener('load');
 
     
     //renderer
@@ -142,10 +157,10 @@ function createFloor() {
                     mesh.material,
                     .9, .3);
 
-    var ground = new Physijs.BoxMesh(new THREE.CubeGeometry(floorSize, 1, floorSize), ground_material, 0);
+    ground = new Physijs.BoxMesh(new THREE.CubeGeometry(floorSize, 1, floorSize), ground_material, 0);
     ground.position.y=7.5;
     
-    scene.add( ground );  
+    scene.add( ground );
 }
 
 function createSphere() {
@@ -158,7 +173,7 @@ function createSphere() {
         
         var geometry = new THREE.SphereGeometry( .3, 32, 32 );
 
-        sphere = new Physijs.SphereMesh(geometry, Physijs.createMaterial(new THREE.MeshPhongMaterial()));
+        sphere = new Physijs.SphereMesh(geometry, Physijs.createMaterial(new THREE.MeshPhongMaterial({ transparent: true, opacity: 0.5 })));
         sphere.position = new THREE.Vector3(controls.getObject().position.x, controls.getObject().position.y, controls.getObject().position.z);
         sphere.lookAt(scene.position);
         sphere.__dirtyRotation = true;
@@ -167,9 +182,19 @@ function createSphere() {
         speed.applyAxisAngle(new THREE.Vector3(0,1,0), controls.getRotationY());
         speed.multiplyScalar(velocity);
         sphere.setLinearVelocity({ x: speed.x, y: speed.y, z: speed.z});
+	sphere.addEventListener('collision', hit);
     } else {
         clicked = true;
     }
+}
+
+function hit(other_object, relative_velocity, relative_rotation, contact_normal) {
+  if (other_object == ground) {
+      floorHit = true;
+  }
+  if (other_object == boundingBox) {
+      alert ("Hit detonator");
+  }
 }
 
 function createFireworksBox() {
@@ -319,11 +344,9 @@ function randomVector3(xMin, xMax, yMin, yMax, zMin, zMax)
 }
 
 function updateSphereVelocity() {
-    if (sphere) {
-        if (sphere.position.y <= 8.4) {
-            speed.multiplyScalar(0.99);
-            sphere.setLinearVelocity({ x:speed.x, y: sphere.getLinearVelocity().y, z:speed.z});
-        }
+    if (sphere && floorHit) {
+         speed.multiplyScalar(0.99);
+         sphere.setLinearVelocity({ x:speed.x, y: sphere.getLinearVelocity().y, z:speed.z});
     }
 }
 
