@@ -4,7 +4,7 @@ var geometry;
 var floorSize = 100;
 var skyboxSize = floorSize*10;
 var boxCoords = {x:0, y:9, z:-30};
-var detonatorCoords = {x:0, y:9, z:30};
+var detonatorCoords = {x:0, y:8.2, z:31.5};
 var r=5;
 var angle=0;
 var loader;
@@ -13,6 +13,8 @@ var speed = new THREE.Vector3(0,0,-1);
 var clicked = false;
 var gravity = 50;
 var h = 1.667;
+var boundingBox, ground;
+var floorHit = false;
 //explosions
 var clock = new THREE.Clock();
 var firework;
@@ -26,7 +28,7 @@ var zStop = false;
 var rocket;
 var fly = false; 
 //sparkles
-var sparklesNumber = 40;
+var sparklesNumber = 49;
 var sparklesLights = [];
 var sparklesSpheres = [];
 var counter = 0;
@@ -75,11 +77,38 @@ function init() {
         var mesh = event.content;
         mesh.position = {x:boxCoords.x, y:boxCoords.y, z:boxCoords.z};
         mesh.scale = {x:.2, y:.2, z:.2};
+        mesh.rotation.x=Math.PI;
+        mesh.rotation.z=Math.PI;
+        fireworks.push(mesh)
+        scene.add(mesh);
+    });
+    loader.load('models/firework.obj', 'models/firework.mtl', {side: THREE.DoubleSide});
+    loader.removeEventListener('load'); 
+    
+    //detonator
+    loader = new THREE.OBJMTLLoader();
+    loader.addEventListener('load', function (event) {
+        var mesh = event.content;
+        mesh.position = detonatorCoords;
+	scene.add(mesh);
+	boundingBox = new Physijs.BoxMesh(new THREE.CubeGeometry(2,0.3,2), Physijs.createMaterial(new THREE.MeshNormalMaterial( { transparent: true, opacity: 0.0 } )), 0);
+	boundingBox.position = new THREE.Vector3(detonatorCoords.x, detonatorCoords.y, detonatorCoords.z);
+        scene.add(boundingBox);
+        });
+    loader.load('models/detonator.obj', 'models/detonator.mtl', {side: THREE.DoubleSide});
+    loader.removeEventListener('load');
+
+    loader = new THREE.OBJMTLLoader();
+    loader.addEventListener('load', function (event) {
+        var mesh = event.content;
+        mesh.position = {x:boxCoords.x, y:boxCoords.y, z:boxCoords.z};
+        mesh.scale = {x:.2, y:.2, z:.2};
         firework = mesh;
         scene.add(mesh);
     });
     loader.load('models/firework.obj', 'models/firework.mtl', {side: THREE.DoubleSide});
     loader.removeEventListener('load'); 
+
     
     //renderer
     renderer = new THREE.WebGLRenderer();
@@ -98,10 +127,10 @@ function createFloor() {
                     mesh.material,
                     .9, .3);
 
-    var ground = new Physijs.BoxMesh(new THREE.CubeGeometry(floorSize, 1, floorSize), ground_material, 0);
+    ground = new Physijs.BoxMesh(new THREE.CubeGeometry(floorSize, 1, floorSize), ground_material, 0);
     ground.position.y=7.5;
     
-    scene.add( ground );  
+    scene.add( ground );
 }
 
 function createSphere() {
@@ -114,7 +143,7 @@ function createSphere() {
         
         var geometry = new THREE.SphereGeometry( .3, 32, 32 );
 
-        sphere = new Physijs.SphereMesh(geometry, Physijs.createMaterial(new THREE.MeshPhongMaterial()));
+        sphere = new Physijs.SphereMesh(geometry, Physijs.createMaterial(new THREE.MeshPhongMaterial({ transparent: true, opacity: 0.5 })));
         sphere.position = new THREE.Vector3(controls.getObject().position.x, controls.getObject().position.y, controls.getObject().position.z);
         sphere.lookAt(scene.position);
         sphere.__dirtyRotation = true;
@@ -123,11 +152,21 @@ function createSphere() {
         speed.applyAxisAngle(new THREE.Vector3(0,1,0), controls.getRotationY());
         speed.multiplyScalar(velocity);
         sphere.setLinearVelocity({ x: speed.x, y: speed.y, z: speed.z});
-
-        fly = true;
+	    sphere.addEventListener('collision', hit);
+        fly=true;
     } else {
         clicked = true;
+
     }
+}
+
+function hit(other_object, relative_velocity, relative_rotation, contact_normal) {
+  if (other_object == ground) {
+      floorHit = true;
+  }
+  if (other_object == boundingBox) {
+      fly=true;
+  }
 }
 
 function createFireworksBox() {
@@ -293,13 +332,14 @@ function initializeFireworks() {
 }
 
 function initializeSparkles() {
-    var sphereLight = new THREE.SphereGeometry(0.03);
+    var sphereLight = new THREE.SphereGeometry(0.02);
     var sphereLightMaterial = new THREE.MeshBasicMaterial({color: 0xffffff});
     for(var i = 0; i < sparklesNumber; i++){
-        var light = new THREE.PointLight( 0x000000, 1, 0.5);
+        var light = new THREE.PointLight( 0x000000, 1, 0.0);
         var sphereLightMesh = new THREE.Mesh(sphereLight, sphereLightMaterial);
         var lightPosition = randomVector3(-0.15, 0.15, 8.10, 8.40, 30.4, 31.4);
         light.position = lightPosition;
+        light.visible = false;
         sphereLightMesh.position = lightPosition;
         sphereLightMesh.visible = false;
         sparklesLights.push(light);
@@ -345,7 +385,9 @@ function createMesh(geom, imageFile, scaleFactor, bumpFile) {
 
 function updateLights(delta) {
     angle += delta/400;
-    if (angle >= 2*Math.PI)    angle -= 2*Math.PI;    
+    if (angle >= 2*Math.PI) {
+        angle -= 2*Math.PI; 
+    }   
     boxLightR.position.z = Math.cos(angle) * r + boxCoords.z;
     boxLightR.position.x = Math.sin(angle) * r + boxCoords.x;    
     boxLightG.position.z = Math.cos(angle + 2*Math.PI/3) * r + boxCoords.z;
@@ -360,11 +402,9 @@ function randomVector3(xMin, xMax, yMin, yMax, zMin, zMax) {
 }
 
 function updateSphereVelocity() {
-    if (sphere) {
-        if (sphere.position.y <= 8.4) {
-            speed.multiplyScalar(0.99);
-            sphere.setLinearVelocity({ x:speed.x, y: sphere.getLinearVelocity().y, z:speed.z});
-        }
+    if (sphere && floorHit) {
+         speed.multiplyScalar(0.99);
+         sphere.setLinearVelocity({ x:speed.x, y: sphere.getLinearVelocity().y, z:speed.z});
     }
 }
 
@@ -452,8 +492,7 @@ function updateFireworks() {
             if(firework.position.z <= stopPosition.z){
                 zStop = true;
             }
-        }
-        
+        }      
         if(xStop && yStop && zStop){
             particleGroup.triggerPoolEmitter( 1, new THREE.Vector3(firework.position.x, firework.position.y, firework.position.z) );
             firework.position = {x:boxCoords.x, y:boxCoords.y, z:boxCoords.z};
@@ -471,23 +510,24 @@ function updateFireworks() {
 function updateRocket() {
     if(fly){
         rocket.position.z -= 0.8;
-        for(var i = 0; i < sparklesNumber - 1; i +=2 ){
-            sparklesLights[i].position.z -= 0.4;
-            sparklesSpheres[i].position.z -= 0.4;
-            if((i + counter) % 2 === 0){
-                if(sparklesSpheres[i].visible === true){
-                    sparklesSpheres[i].visible = false;
-                    sparklesSpheres[i+1].visible = true;
-                }
-                else{
-                    sparklesSpheres[i].visible = true;
-                    sparklesSpheres[i+1].visible = false;
-                } 
-            }
-        }
         sparklesLights[sparklesNumber - 1].position.z -= 0.4;
         sparklesSpheres[sparklesNumber - 1].position.z -= 0.4;
-        counter++;
+        sparklesLights.visible = true;
+        for(var i = 0; i < sparklesNumber - 1; i +=2 ){
+            sparklesLights[i].visible = true;
+            sparklesLights[i].position.z -= 0.4;
+            sparklesSpheres[i].position.z -= 0.4;
+            sparklesLights[i + 1].position.z -= 0.4;
+            sparklesSpheres[i + 1].position.z -= 0.4;
+            if(sparklesSpheres[i].visible === true){
+                sparklesSpheres[i].visible = false;
+                sparklesSpheres[i+1].visible = true;
+            }
+            else{
+                sparklesSpheres[i].visible = true;
+                sparklesSpheres[i+1].visible = false;
+            }                     
+        }
         if(rocket.position.z <= -25){
             boom = true;
         }
