@@ -134,6 +134,7 @@
                 updateFireworks();
                 updateSphereVelocity()
                 updateLights(delta);
+                updateDetonatorRocket();
 				controls.update(delta);
 				renderer.render( scene, camera );
                 scene.simulate(undefined, 1);

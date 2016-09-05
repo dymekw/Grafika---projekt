@@ -15,6 +15,8 @@ var gravity = 50;
 var h = 1.667;
 var boundingBox, ground;
 var floorHit = false;
+var rocketStarted = false;
+var rocket;
 
 //explosions
 var clock = new THREE.Clock();
@@ -53,12 +55,12 @@ function init() {
     //firework
     loader = new THREE.OBJMTLLoader();
     loader.addEventListener('load', function (event) {
-        var mesh = event.content;
-        mesh.position = {x:0, y:8.2, z:28.5};
-        mesh.scale = {x:.2, y:.2, z:.2};
-        mesh.rotation.x=Math.PI/2;
-        mesh.rotation.z=Math.PI;
-        scene.add(mesh);
+        rocket = event.content;
+        rocket.position = new THREE.Vector3(0, 8.2, 28.5);
+        rocket.scale = {x:.2, y:.2, z:.2};
+        rocket.rotation.x=Math.PI/2;
+        rocket.rotation.z=Math.PI;
+        scene.add(rocket);
     });
     loader.load('models/firework.obj', 'models/firework.mtl', {side: THREE.DoubleSide});
     loader.removeEventListener('load');
@@ -156,7 +158,7 @@ function hit(other_object, relative_velocity, relative_rotation, contact_normal)
       floorHit = true;
   }
   if (other_object == boundingBox) {
-      alert ("Hit detonator");
+      rocketStarted=true;
   }
 }
 
@@ -477,4 +479,15 @@ function updateFireworks() {
             condition = false;
         }
     }  
+}
+
+function updateDetonatorRocket() {
+  if (rocketStarted) {
+      rocket.position.z -= 1;
+      
+      if (Math.abs(rocket.position.z - boxCoords.z) <= 0.5) {
+	  rocketStarted = false;
+	  boom = true;
+      }
+  }
 }
