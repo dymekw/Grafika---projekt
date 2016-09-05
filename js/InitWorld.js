@@ -7,13 +7,7 @@ var boxCoords = {x:0, y:9, z:-30};
 var detonatorCoords = {x:0, y:8.2, z:30};
 var r=5;
 var angle=0;
-var boom = true;
-var counter = 0;
-var clock = new THREE.Clock();
 var loader;
-var fireworks = [];
-var condition = true;
-var stopPosition = randomVector3(-20,20, 50,100, -50,-10);
 var sphere;
 var speed = new THREE.Vector3(0,0,-1);
 var clicked = false;
@@ -21,6 +15,16 @@ var gravity = 50;
 var h = 1.667;
 var boundingBox, ground;
 var floorHit = false;
+
+//explosions
+var clock = new THREE.Clock();
+var firework;
+var boom = false; //starting explosion and fireworks
+var condition = true; //starting one firework
+var stopPosition = randomVector3(-20,20, 50,100, -50,-10);  //place of firework rocket explosion
+var xStop = false; //stop updating firework rocket position
+var yStop = false;
+var zStop = false;
 
 function init() {
     Physijs.scripts.worker = 'js/physijs_worker.js';
@@ -43,61 +47,9 @@ function init() {
     createSkybox();
     createFireworksBox();
     createFence();
-
-    //explosion
-    this.boom1 = new ParticleEngine();
-    boom1.setValues( Examples.firework );
-    boom1.initialize();
-    this.boom2 = new ParticleEngine();
-    boom2.setValues( Examples.firework );
-    boom2.initialize();
-    this.boom3 = new ParticleEngine();
-    boom3.setValues( Examples.firework );
-    boom3.initialize();
-
-    //fireworks
-    emitterSettings = {
-                type: 'sphere',
-                positionSpread: new THREE.Vector3(2, 2, 2),
-                acceleration: new THREE.Vector3(0, 0, 0),
-                radius: 2,
-                speed: 10,
-                speedSpread: 5,
-                sizeStart: 5,
-                // sizeStartSpread: 30,
-                sizeEnd: 3,
-                opacityStart: 1,
-                opacityMiddle: 1,
-                opacityEnd: 0,
-                colorStart: new THREE.Color('white'),
-                colorStartSpread: new THREE.Vector3(0.5,0.5,0.5),
-                colorMiddle: new THREE.Color('red'),
-                colorEnd: new THREE.Color('red'),
-                particlesPerSecond: 2000,
-                alive: 0, // initially disabled, will be triggered later
-                emitterDuration: 0.1
-            };
-            
-    // Create a particle group to add the emitter
-    this.particleGroup = new ShaderParticleGroup(
-    {
-        texture: THREE.ImageUtils.loadTexture('images/spark.png'),
-        maxAge: 2,
-        colorize: 1,
-        blending: THREE.AdditiveBlending,
-    });
-    
-    var colors = ["red", "orange", "yellow", "green", "blue", "violet", "pink", "magenta", "cyan", "steelblue", "seagreen"];
-    for (var i = 0; i < colors.length; i++)
-    {
-        emitterSettings.colorMiddle = new THREE.Color( colors[i] );
-        emitterSettings.colorEnd = new THREE.Color( colors[i] );
-        particleGroup.addPool( 1, emitterSettings, false );
-    }
-    
-    // Add the particle group to the scene so it can be drawn.
-    scene.add( particleGroup.mesh );
-
+    initializeExplosion();
+    initializeFireworks();
+   
     //firework
     loader = new THREE.OBJMTLLoader();
     loader.addEventListener('load', function (event) {
@@ -107,7 +59,7 @@ function init() {
         mesh.rotation.x=Math.PI/2;
         mesh.rotation.z=Math.PI;
         scene.add(mesh);
-        });
+    });
     loader.load('models/firework.obj', 'models/firework.mtl', {side: THREE.DoubleSide});
     loader.removeEventListener('load');
 
@@ -138,6 +90,17 @@ function init() {
         });
     loader.load('models/detonator.obj', 'models/detonator.mtl', {side: THREE.DoubleSide});
     loader.removeEventListener('load');
+
+    loader = new THREE.OBJMTLLoader();
+    loader.addEventListener('load', function (event) {
+        var mesh = event.content;
+        mesh.position = {x:boxCoords.x, y:boxCoords.y, z:boxCoords.z};
+        mesh.scale = {x:.2, y:.2, z:.2};
+        firework = mesh;
+        scene.add(mesh);
+    });
+    loader.load('models/firework.obj', 'models/firework.mtl', {side: THREE.DoubleSide});
+    loader.removeEventListener('load'); 
 
     
     //renderer
@@ -291,6 +254,74 @@ function createSkybox() {
     scene.add(mesh);
 }
 
+function initializeExplosion() {
+    var explosion = {
+        positionStyle  : Type.SPHERE,
+        positionBase   : new THREE.Vector3( 0, 10, -30 ),
+        positionRadius : 0.2,     
+        velocityStyle  : Type.SPHERE,
+        speedBase      : -6,
+        speedSpread    : 1,      
+        accelerationBase : new THREE.Vector3( 0, 15, 0 ),        
+        particleTexture : THREE.ImageUtils.loadTexture( 'images/spark.png' ),       
+        sizeTween    : new Tween( [0.5, 0.7, 1.3], [2, 20, 1] ),
+        opacityTween : new Tween( [0.2, 0.7, 2.5], [0.75, 1, 0] ),
+        colorTween   : new Tween( [0.4, 0.8, 1.0], [ new THREE.Vector3(0,1,1), new THREE.Vector3(0,1,0.6), new THREE.Vector3(0.8, 1, 0.6) ] ),
+        blendStyle   : THREE.AdditiveBlending,        
+        particlesPerSecond : 1000,
+        particleDeathAge   : 2.5,       
+        emitterDeathAge    : 0.2
+    };
+    this.boom1 = new ParticleEngine();
+    boom1.setValues(explosion);
+    boom1.initialize();
+    this.boom2 = new ParticleEngine();
+    boom2.setValues(explosion);
+    boom2.initialize();
+    this.boom3 = new ParticleEngine();
+    boom3.setValues(explosion);
+    boom3.initialize();
+}
+
+function initializeFireworks() {
+    var emitterSettings = {
+        type: 'sphere',
+        positionSpread: new THREE.Vector3(2, 2, 2),
+        acceleration: new THREE.Vector3(0, 0, 0),
+        radius: 2,
+        speed: 10,
+        speedSpread: 5,
+        sizeStart: 5,
+        // sizeStartSpread: 30,
+        sizeEnd: 3,
+        opacityStart: 1,
+        opacityMiddle: 1,
+        opacityEnd: 0,
+        colorStart: new THREE.Color('white'),
+        colorStartSpread: new THREE.Vector3(0.5,0.5,0.5),
+        colorMiddle: new THREE.Color('red'),
+        colorEnd: new THREE.Color('red'),
+        particlesPerSecond: 2000,
+        alive: 0, // initially disabled, will be triggered later
+        emitterDuration: 0.1
+    };
+    // Create a particle group to add the emitter
+    this.particleGroup = new ShaderParticleGroup({
+        texture: THREE.ImageUtils.loadTexture('images/spark.png'),
+        maxAge: 2,
+        colorize: 1,
+        blending: THREE.AdditiveBlending,
+    });   
+    var colors = ["red", "orange", "yellow", "green", "blue", "violet", "pink", "magenta", "cyan", "steelblue", "seagreen"];
+    for (var i = 0; i < colors.length; i++) {
+        emitterSettings.colorMiddle = new THREE.Color( colors[i] );
+        emitterSettings.colorEnd = new THREE.Color( colors[i] );
+        particleGroup.addPool( 1, emitterSettings, false );
+    }
+    // Add the particle group to the scene so it can be drawn.
+    scene.add( particleGroup.mesh );
+}
+
 function addLight() {
     ambiLight = new THREE.AmbientLight(0x222222)
     scene.add(ambiLight);    
@@ -336,9 +367,7 @@ function updateLights(delta) {
     boxLightB.position.x = Math.sin(angle + 4*Math.PI/3) * r + boxCoords.y;
 }
 
-function randomVector3(xMin, xMax, yMin, yMax, zMin, zMax)
-{
-    //return new THREE.Vector3(0, 50, -30);
+function randomVector3(xMin, xMax, yMin, yMax, zMin, zMax) {
     return new THREE.Vector3( xMin + (xMax - xMin) * Math.random(),
         yMin + (yMax - yMin) * Math.random(), zMin + (zMax - zMin) * Math.random() );
 }
@@ -347,6 +376,41 @@ function updateSphereVelocity() {
     if (sphere && floorHit) {
          speed.multiplyScalar(0.99);
          sphere.setLinearVelocity({ x:speed.x, y: sphere.getLinearVelocity().y, z:speed.z});
+    }
+}
+
+function calculateInclination(mesh, iks, igrek, zet) {
+    var x = iks/30.0;
+    var y = (igrek - 31.8)/51.8;
+    var z = (zet + 30.0)/30.0;
+
+    if(x>0){
+        if(z>=0) {
+            mesh.rotation.x = Math.atan(Math.abs(y/x));
+            mesh.rotation.z = 3*Math.PI/2 + Math.atan(Math.abs(z/x));
+        }
+        else {
+            mesh.rotation.x = Math.PI/2 + Math.atan(Math.abs(y/x));
+            mesh.rotation.z = Math.PI + Math.atan(Math.abs(z/x));
+        }
+    }
+    else if(x < 0) {
+        if(z>=0){
+            mesh.rotation.x = Math.atan(Math.abs(y/x));
+            mesh.rotation.z = Math.atan(Math.abs(z/x));
+        }
+        else {
+            mesh.rotation.x = Math.PI/2 + Math.atan(Math.abs(y/x));
+            mesh.rotation.z = Math.PI/2 + Math.atan(Math.abs(z/x));
+        }
+    } 
+    else {
+        if(z>=0){
+            mesh.rotation.z = Math.atan(Math.abs(z/x));
+        }
+        else {
+            mesh.rotation.z = Math.PI/2 + Math.atan(Math.abs(z/x));
+        }
     }
 }
 
@@ -360,26 +424,57 @@ function updateFireworks() {
         boom3.update(dt * 0.4);
     } 
 
-    if(!condition){
+    if(!condition && boom){
         condition = (Math.random() < 2*dt);
         stopPosition = randomVector3(-30,30, 40,60, -70, 10);
+        calculateInclination(firework, stopPosition.x, stopPosition.y, stopPosition.z); 
     }
 
-    if(condition){ 
-        fireworks[counter].position.x += (fireworks[counter].position.x >= stopPosition.x) ? 0 : (Math.abs(stopPosition.x - boxCoords.x)/10);
-        fireworks[counter].position.y += (fireworks[counter].position.y >= stopPosition.y) ? 0 : (Math.abs(stopPosition.y - boxCoords.y)/10);
-        fireworks[counter].position.z += (fireworks[counter].position.z >= stopPosition.z) ? 0 : (Math.abs(stopPosition.z - boxCoords.z)/10);
-        if(fireworks[counter].position.x >= stopPosition.x && 
-            fireworks[counter].position.y >= stopPosition.y &&
-            fireworks[counter].position.z >= stopPosition.z){
-            particleGroup.triggerPoolEmitter( 1, new THREE.Vector3(fireworks[counter].position.x, fireworks[counter].position.y, fireworks[counter].position.z) );
-            fireworks[counter].position = {x:boxCoords.x, y:boxCoords.y, z:boxCoords.z};
-            counter += 1;
-            if( counter === 10){
-                counter = 0;
+    if(condition && boom){ 
+        if(boxCoords.x < stopPosition.x){
+            firework.position.x += (firework.position.x >= stopPosition.x) ? 0 : (Math.abs(stopPosition.x - boxCoords.x)/10);
+            if(firework.position.x >= stopPosition.x){
+                xStop = true;
             }
+        } else {
+            firework.position.x -= (firework.position.x <= stopPosition.x) ? 0 : (Math.abs(stopPosition.x - boxCoords.x)/10);
+                if(firework.position.x <= stopPosition.x){
+                xStop = true;
+            }
+        }
+        if(boxCoords.y < stopPosition.y){
+            firework.position.y += (firework.position.y >= stopPosition.y) ? 0 : (Math.abs(stopPosition.y - boxCoords.y)/10);
+            if(firework.position.y >= stopPosition.y){
+                yStop = true;
+            }    
+        } else {
+            firework.position.y -= (firework.position.y <= stopPosition.y) ? 0 : (Math.abs(stopPosition.y - boxCoords.y)/10);
+            if(firework.position.y <= stopPosition.y){
+                yStop = true;
+            }
+        }
+        if(boxCoords.z > stopPosition.z){
+            firework.position.z += (firework.position.z >= stopPosition.z) ? 0 : (Math.abs(stopPosition.z - boxCoords.z)/10);
+            if(firework.position.z >= stopPosition.z){
+                zStop = true;
+            }
+        } else {
+            firework.position.z -= (firework.position.z <= stopPosition.z) ? 0 : (Math.abs(stopPosition.z - boxCoords.z)/10);
+            if(firework.position.z <= stopPosition.z){
+                zStop = true;
+            }
+        }
+        
+        if(xStop && yStop && zStop){
+            particleGroup.triggerPoolEmitter( 1, new THREE.Vector3(firework.position.x, firework.position.y, firework.position.z) );
+            firework.position = {x:boxCoords.x, y:boxCoords.y, z:boxCoords.z};
+            firework.rotation.x = 0;
+            firework.rotation.y = 0;
+            firework.rotation.z = 0;
+            xStop = false;
+            yStop = false;
+            zStop = false;
             condition = false;
         }
-    }
-    
+    }  
 }
