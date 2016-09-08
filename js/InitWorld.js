@@ -174,7 +174,7 @@ function createFireworksBox() {
             var mesh = event.content;
             mesh.position.y=boxCoords.y;
             mesh.position.z=boxCoords.z;
-            scene.add(mesh);
+            //scene.add(mesh);
         });
     loader.load('models/fireworks.obj', 'models/fireworks.mtl', {side: THREE.DoubleSide});
     loader.removeEventListener('load'); 
@@ -445,20 +445,22 @@ function calculateInclination(mesh, iks, igrek, zet) {
 function updateFireworks() {
     var dt = clock.getDelta();
     particleGroup.tick( dt );
+    
+    if (!boom)  return;
 
-    if(boom){
-        boom1.update(dt * 0.2);
-        boom2.update(dt * 0.3);
-        boom3.update(dt * 0.4);
-    } 
+    boom1.update(dt * 0.2);
+    boom2.update(dt * 0.3);
+    boom3.update(dt * 0.4);
 
-    if(!condition && boom){
+    if(!condition){
         condition = (Math.random() < 2*dt);
-        stopPosition = randomVector3(-30,30, 40,60, -70, 10);
-        calculateInclination(firework, stopPosition.x, stopPosition.y, stopPosition.z); 
+        if (condition) {
+            stopPosition = randomVector3(-30,30, 40,60, -70, 10);
+            calculateInclination(firework, stopPosition.x, stopPosition.y, stopPosition.z); 
+        }
     }
 
-    if(condition && boom){ 
+    if(condition){ 
         if(boxCoords.x < stopPosition.x){
             firework.position.x += (firework.position.x >= stopPosition.x) ? 0 : (Math.abs(stopPosition.x - boxCoords.x)/10);
             if(firework.position.x >= stopPosition.x){
