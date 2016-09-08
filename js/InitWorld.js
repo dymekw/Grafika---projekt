@@ -148,6 +148,15 @@ function createSphere() {
         scene.add(sphere);
 
         speed.applyAxisAngle(new THREE.Vector3(0,1,0), controls.getRotationY());
+        
+        if (ray.length()*speed.length() > 0) {
+            var cos = ray.dot(speed) / (ray.length()*speed.length());
+            if (cos >= 0.9) {
+                speed = ray;
+                speed.multiplyScalar(1/ray.length());
+            }
+        }
+        
         speed.multiplyScalar(velocity);
         sphere.setLinearVelocity({ x: speed.x, y: speed.y, z: speed.z});
 	    sphere.addEventListener('collision', hit);
