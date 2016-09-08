@@ -4,7 +4,7 @@ var geometry;
 var floorSize = 100;
 var skyboxSize = floorSize*10;
 var boxCoords = {x:0, y:9, z:-30};
-var detonatorCoords = {x:0, y:8.2, z:31.5};
+var detonatorCoords = {x:0, y:8.01, z:31.5};
 var r=5;
 var angle=0;
 var loader;
@@ -153,7 +153,6 @@ function createSphere() {
         speed.multiplyScalar(velocity);
         sphere.setLinearVelocity({ x: speed.x, y: speed.y, z: speed.z});
 	    sphere.addEventListener('collision', hit);
-        fly=true;
     } else {
         clicked = true;
 
@@ -361,7 +360,7 @@ function addLight() {
     boxLightB = new THREE.PointLight(0x0000ff, 5, 20);
     boxLightB.position.y = 20;
     scene.add(boxLightB);    
-    var detonatorLight = new THREE.PointLight(0xffffff, 5, 20);
+    var detonatorLight = new THREE.PointLight(0x999999, 5, 20);
     detonatorLight.position.set(detonatorCoords.x, 20, detonatorCoords.z);
     scene.add(detonatorLight);
 }
