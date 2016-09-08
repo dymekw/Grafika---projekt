@@ -20,10 +20,6 @@ var clock = new THREE.Clock();
 var firework;
 var boom = false; //starting explosion and fireworks
 var condition = true; //starting one firework
-var stopPosition = randomVector3(-20,20, 50,100, -50,-10);  //place of firework rocket explosion
-var xStop = false; //stop updating firework rocket position
-var yStop = false;
-var zStop = false;
 //firework rocket
 var rocket;
 var fly = false; 
@@ -32,6 +28,8 @@ var sparklesNumber = 49;
 var sparklesLights = [];
 var sparklesSpheres = [];
 var counter = 0;
+var flyTime=0;
+var MAX_FLY_TIME_SEC=1.2;
 
 function init() {
     Physijs.scripts.worker = 'js/physijs_worker.js';
@@ -101,7 +99,7 @@ function init() {
     loader = new THREE.OBJMTLLoader();
     loader.addEventListener('load', function (event) {
         var mesh = event.content;
-        mesh.position = {x:boxCoords.x, y:boxCoords.y, z:boxCoords.z};
+        mesh.position = new THREE.Vector3(boxCoords.x, boxCoords.y, boxCoords.z);
         mesh.scale = {x:.2, y:.2, z:.2};
         firework = mesh;
         scene.add(mesh);
@@ -174,7 +172,7 @@ function createFireworksBox() {
             var mesh = event.content;
             mesh.position.y=boxCoords.y;
             mesh.position.z=boxCoords.z;
-            //scene.add(mesh);
+            scene.add(mesh);
         });
     loader.load('models/fireworks.obj', 'models/fireworks.mtl', {side: THREE.DoubleSide});
     loader.removeEventListener('load'); 
@@ -407,41 +405,6 @@ function updateSphereVelocity() {
     }
 }
 
-function calculateInclination(mesh, iks, igrek, zet) {
-    var x = iks/30.0;
-    var y = (igrek - 31.8)/51.8;
-    var z = (zet + 30.0)/30.0;
-
-    if(x>0){
-        if(z>=0) {
-            mesh.rotation.x = Math.atan(Math.abs(y/x));
-            mesh.rotation.z = 3*Math.PI/2 + Math.atan(Math.abs(z/x));
-        }
-        else {
-            mesh.rotation.x = Math.PI/2 + Math.atan(Math.abs(y/x));
-            mesh.rotation.z = Math.PI + Math.atan(Math.abs(z/x));
-        }
-    }
-    else if(x < 0) {
-        if(z>=0){
-            mesh.rotation.x = Math.atan(Math.abs(y/x));
-            mesh.rotation.z = Math.atan(Math.abs(z/x));
-        }
-        else {
-            mesh.rotation.x = Math.PI/2 + Math.atan(Math.abs(y/x));
-            mesh.rotation.z = Math.PI/2 + Math.atan(Math.abs(z/x));
-        }
-    } 
-    else {
-        if(z>=0){
-            mesh.rotation.z = Math.atan(Math.abs(z/x));
-        }
-        else {
-            mesh.rotation.z = Math.PI/2 + Math.atan(Math.abs(z/x));
-        }
-    }
-}
-
 function updateFireworks() {
     var dt = clock.getDelta();
     particleGroup.tick( dt );
@@ -455,54 +418,23 @@ function updateFireworks() {
     if(!condition){
         condition = (Math.random() < 2*dt);
         if (condition) {
-            stopPosition = randomVector3(-30,30, 40,60, -70, 10);
-            calculateInclination(firework, stopPosition.x, stopPosition.y, stopPosition.z); 
+            firework.rotation.x = Math.random()*2 - 1;
+            firework.rotation.z = Math.random()*2 - 1;
         }
     }
 
-    if(condition){ 
-        if(boxCoords.x < stopPosition.x){
-            firework.position.x += (firework.position.x >= stopPosition.x) ? 0 : (Math.abs(stopPosition.x - boxCoords.x)/10);
-            if(firework.position.x >= stopPosition.x){
-                xStop = true;
-            }
-        } else {
-            firework.position.x -= (firework.position.x <= stopPosition.x) ? 0 : (Math.abs(stopPosition.x - boxCoords.x)/10);
-                if(firework.position.x <= stopPosition.x){
-                xStop = true;
-            }
-        }
-        if(boxCoords.y < stopPosition.y){
-            firework.position.y += (firework.position.y >= stopPosition.y) ? 0 : (Math.abs(stopPosition.y - boxCoords.y)/10);
-            if(firework.position.y >= stopPosition.y){
-                yStop = true;
-            }    
-        } else {
-            firework.position.y -= (firework.position.y <= stopPosition.y) ? 0 : (Math.abs(stopPosition.y - boxCoords.y)/10);
-            if(firework.position.y <= stopPosition.y){
-                yStop = true;
-            }
-        }
-        if(boxCoords.z > stopPosition.z){
-            firework.position.z += (firework.position.z >= stopPosition.z) ? 0 : (Math.abs(stopPosition.z - boxCoords.z)/10);
-            if(firework.position.z >= stopPosition.z){
-                zStop = true;
-            }
-        } else {
-            firework.position.z -= (firework.position.z <= stopPosition.z) ? 0 : (Math.abs(stopPosition.z - boxCoords.z)/10);
-            if(firework.position.z <= stopPosition.z){
-                zStop = true;
-            }
-        }      
-        if(xStop && yStop && zStop){
+    if(condition){
+        flyTime += dt;
+        
+        firework.translateY(dt*25);
+        
+        if(flyTime >= MAX_FLY_TIME_SEC){
             particleGroup.triggerPoolEmitter( 1, new THREE.Vector3(firework.position.x, firework.position.y, firework.position.z) );
-            firework.position = {x:boxCoords.x, y:boxCoords.y, z:boxCoords.z};
+            firework.position = new THREE.Vector3(boxCoords.x, boxCoords.y, boxCoords.z);
             firework.rotation.x = 0;
             firework.rotation.y = 0;
             firework.rotation.z = 0;
-            xStop = false;
-            yStop = false;
-            zStop = false;
+            flyTime=0;
             condition = false;
         }
     }  
