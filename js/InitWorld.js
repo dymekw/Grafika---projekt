@@ -224,6 +224,22 @@ function createFence() {
         });
     loader.load('models/fence.obj', 'models/fence.mtl', {side: THREE.DoubleSide});
     loader.removeEventListener('load');
+    
+    var boundingBox = new Physijs.BoxMesh(new THREE.CubeGeometry(floorSize,2,10), Physijs.createMaterial(new THREE.MeshNormalMaterial( { transparent: true, opacity: 0 } )), 0);
+    boundingBox.position = new THREE.Vector3(0, 8.5, -floorSize/2-5);
+    scene.add(boundingBox);
+    
+    boundingBox = new Physijs.BoxMesh(new THREE.CubeGeometry(floorSize,2,10), Physijs.createMaterial(new THREE.MeshNormalMaterial( { transparent: true, opacity: 0 } )), 0);
+    boundingBox.position = new THREE.Vector3(0, 8.5, floorSize/2+5);
+    scene.add(boundingBox);
+    
+    boundingBox = new Physijs.BoxMesh(new THREE.CubeGeometry(10,2,floorSize), Physijs.createMaterial(new THREE.MeshNormalMaterial( { transparent: true, opacity: 0 } )), 0);
+    boundingBox.position = new THREE.Vector3(floorSize/2+5, 8.5, 0);
+    scene.add(boundingBox);
+    
+    boundingBox = new Physijs.BoxMesh(new THREE.CubeGeometry(10,2,floorSize), Physijs.createMaterial(new THREE.MeshNormalMaterial( { transparent: true, opacity: 0 } )), 0);
+    boundingBox.position = new THREE.Vector3(-floorSize/2-5, 8.5, 0);
+    scene.add(boundingBox);
 }
 
 function createSkybox() {
